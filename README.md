@@ -106,3 +106,4 @@ Point `lib/core/api_client.dart`'s `baseUrl` at your running backend
   and other applicable regimes.
 - The JWT secret and DB credentials in `.env.example` are placeholders —
   never commit real secrets.
+"# sgec" 
