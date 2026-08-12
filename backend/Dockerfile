@@ -16,4 +16,4 @@ EXPOSE 4000
 # Applies pending migrations then starts the API. For the very first run
 # use `docker compose exec api npx prisma migrate deploy` if this needs a
 # DB that isn't ready yet on first boot.
-CMD sh -c "npx prisma migrate deploy && node src/index.js"
+CMD sh -c "npx prisma db push --accept-data-loss && node src/index.js"
