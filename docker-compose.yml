@@ -1,0 +1,41 @@
+version: "3.8"
+
+# One-command local backend so the mobile app has something real to talk
+# to while building. NOT a production deployment (no TLS, no secrets
+# management, single container) — see README "Security notes" before
+# deploying anywhere public.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sgec_user
+      POSTGRES_PASSWORD: sgec_pass
+      POSTGRES_DB: sgec
+    ports:
+      - "5432:5432"
+    volumes:
+      - sgec_pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://sgec_user:sgec_pass@db:5432/sgec?schema=public"
+      JWT_SECRET: "change-me-dev-only"
+      JWT_EXPIRES_IN: "7d"
+      PORT: 4000
+      NODE_ENV: development
+      STORAGE_DRIVER: local
+      LOCAL_STORAGE_DIR: ./uploads
+    ports:
+      - "4000:4000"
+    volumes:
+      - sgec_uploads:/app/uploads
+
+volumes:
+  sgec_pgdata:
+  sgec_uploads:

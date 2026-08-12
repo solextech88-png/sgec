@@ -1,0 +1,330 @@
+// Smart Global Education Consult — data model
+// Run `npx prisma migrate dev --name init` after filling in .env
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  STUDENT
+  CONSULTANT
+  ADMIN
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+enum DocumentType {
+  PASSPORT
+  PHOTOGRAPH
+  TRANSCRIPT
+  CERTIFICATE
+  ENGLISH_TEST
+  CV
+  PERSONAL_STATEMENT
+  RESEARCH_PROPOSAL
+  RECOMMENDATION_LETTER
+  OTHER
+}
+
+enum ApplicationStatus {
+  DRAFT
+  AI_REVIEWED
+  CONSULTANT_REVIEWED
+  SUBMITTED
+  UNDER_REVIEW_BY_UNIVERSITY
+  OFFER_CONDITIONAL
+  OFFER_UNCONDITIONAL
+  REJECTED
+  WITHDRAWN
+  DEPOSIT_PAID
+  CAS_ISSUED
+  VISA_APPLIED
+  VISA_GRANTED
+  ENROLLED
+}
+
+enum StudyLevel {
+  FOUNDATION
+  DIPLOMA
+  BACHELORS
+  TOP_UP
+  MASTERS
+  MBA
+  MRES
+  MSC
+  MA
+  MPHIL
+  PHD
+  PROFESSIONAL
+  ONLINE
+}
+
+enum ConsentStatus {
+  PENDING
+  SIGNED
+  REVOKED
+}
+
+// ---------- Core users ----------
+
+model User {
+  id            String       @id @default(uuid())
+  email         String?      @unique
+  phone         String?      @unique
+  passwordHash  String?
+  authProvider  AuthProvider @default(EMAIL)
+  role          Role         @default(STUDENT)
+  isEmailVerified Boolean    @default(false)
+  isPhoneVerified Boolean    @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  student       StudentProfile?
+  consultant    ConsultantProfile?
+  admin         AdminProfile?
+
+  otpCodes      OtpCode[]
+  notifications Notification[]
+  sentMessages  ChatMessage[]     @relation("SentMessages")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  code      String
+  channel   String   // "email" | "phone"
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ---------- Student ----------
+
+model StudentProfile {
+  id              String   @id @default(uuid())
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String   @unique
+
+  firstName       String
+  lastName        String
+  dateOfBirth     DateTime?
+  nationality     String?      // ISO country code — student can be from ANY country
+  countryOfResidence String?
+  gender          String?
+  passportNumber  String?
+
+  highestQualification String?
+  gpaOrGrade      String?
+
+  assignedConsultant   ConsultantProfile? @relation(fields: [assignedConsultantId], references: [id])
+  assignedConsultantId String?
+
+  documents       Document[]
+  consentSignatures ConsentSignature[]
+  applications    Application[]
+  chatThreads     ChatThread[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ConsultantProfile {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
+  firstName   String
+  lastName    String
+  specialties String[] // e.g. ["UK", "Ireland", "STEM Masters"]
+  students    StudentProfile[]
+  createdAt   DateTime @default(now())
+}
+
+model AdminProfile {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  firstName String
+  lastName  String
+}
+
+// ---------- Documents ----------
+
+model Document {
+  id          String       @id @default(uuid())
+  student     StudentProfile @relation(fields: [studentId], references: [id])
+  studentId   String
+  type        DocumentType
+  fileUrl     String       // storage adapter returns a pointer, not raw bytes
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  uploadedAt  DateTime     @default(now())
+  verifiedByConsultant Boolean @default(false)
+}
+
+// ---------- Consent ----------
+
+model ConsentForm {
+  id           String   @id @default(uuid())
+  version      String   // e.g. "v1.2-2026-01"
+  title        String
+  bodyMarkdown String   // the exact legal text the student agrees to
+  countryScope String?  // null = global, else ISO country the wording is tailored for
+  createdAt    DateTime @default(now())
+
+  signatures   ConsentSignature[]
+}
+
+model ConsentSignature {
+  id            String      @id @default(uuid())
+  student       StudentProfile @relation(fields: [studentId], references: [id])
+  studentId     String
+  consentForm   ConsentForm @relation(fields: [consentFormId], references: [id])
+  consentFormId String
+  status        ConsentStatus @default(PENDING)
+  signatureImageUrl String? // captured signature pad image, stored via storage adapter
+  typedFullName String?
+  documentHash  String     // sha256 of bodyMarkdown at signing time, for audit integrity
+  ipAddress     String?
+  signedAt      DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime   @default(now())
+}
+
+// ---------- University catalog ----------
+
+model Country {
+  id         String   @id @default(uuid())
+  name       String   @unique
+  isoCode    String   @unique
+  region     String   // "UK", "Ireland", "Europe"
+  universities University[]
+}
+
+model University {
+  id            String   @id @default(uuid())
+  name          String
+  country       Country  @relation(fields: [countryId], references: [id])
+  countryId     String
+  city          String?
+  type          String?  // "Public", "Technological University", "Private College"
+  websiteUrl    String?
+  logoUrl       String?
+  hasIntegratedApi Boolean @default(false) // true once a real submission integration exists
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  programmes    Programme[]
+
+  @@index([countryId])
+}
+
+model Programme {
+  id                String     @id @default(uuid())
+  university        University @relation(fields: [universityId], references: [id])
+  universityId      String
+  name              String
+  level             StudyLevel
+  fieldOfStudy      String?
+  durationMonths    Int?
+  tuitionFeeAmount  Decimal?   @db.Decimal(10, 2)
+  tuitionFeeCurrency String?  @default("GBP")
+  entryRequirements String?
+  englishRequirement String?  // e.g. "IELTS 6.5 overall, no band below 6.0"
+  applicationDeadline DateTime?
+  scholarshipsAvailable String?
+  campus            String?
+  startDates        String[]  // e.g. ["September 2026", "January 2027"]
+  casAvailable      Boolean?  // UK-specific
+  dependantsPolicy  String?
+  visaInfo          String?
+  postGradWorkRights String?  // e.g. "Graduate Route — 2 years post-study work visa"
+  intakeCycle       String    // e.g. "2026/27"
+  isNextIntake      Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  applications      Application[]
+
+  @@index([universityId])
+  @@index([level])
+}
+
+// ---------- Applications ----------
+
+model Application {
+  id           String            @id @default(uuid())
+  student      StudentProfile    @relation(fields: [studentId], references: [id])
+  studentId    String
+  programme    Programme         @relation(fields: [programmeId], references: [id])
+  programmeId  String
+  status       ApplicationStatus @default(DRAFT)
+  aiMatchScore Float?            // 0-100 predicted admission chance
+  aiNotes      String?
+  consultantNotes String?
+  submittedAt  DateTime?
+  decisionAt   DateTime?
+  decisionNotes String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  statusHistory ApplicationStatusEvent[]
+
+  @@index([studentId])
+  @@index([programmeId])
+}
+
+model ApplicationStatusEvent {
+  id            String            @id @default(uuid())
+  application   Application       @relation(fields: [applicationId], references: [id])
+  applicationId String
+  status        ApplicationStatus
+  note          String?
+  createdAt     DateTime          @default(now())
+}
+
+// ---------- Chat ----------
+
+model ChatThread {
+  id           String   @id @default(uuid())
+  student      StudentProfile @relation(fields: [studentId], references: [id])
+  studentId    String
+  messages     ChatMessage[]
+  createdAt    DateTime @default(now())
+}
+
+model ChatMessage {
+  id         String     @id @default(uuid())
+  thread     ChatThread @relation(fields: [threadId], references: [id])
+  threadId   String
+  sender     User       @relation("SentMessages", fields: [senderId], references: [id])
+  senderId   String
+  body       String
+  isAiReply  Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+}
+
+// ---------- Notifications ----------
+
+model Notification {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
