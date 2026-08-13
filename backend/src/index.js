@@ -41,6 +41,52 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
  * Visit: https://<your-app>.onrender.com/admin/seed?token=<SEED_TOKEN>
  * Remove this route once you have real admin tooling / shell access.
  */
+/**
+ * One-time promotion tool: registration always creates a STUDENT account,
+ * and there's no public "become admin" flow (by design — that would be a
+ * serious security hole). To get an admin account on a host with no shell
+ * access, register a normal account in the app first, then hit this once
+ * with that account's email to flip it to ADMIN. Protected by the same
+ * token as /admin/seed. After promoting, log out and back in on the
+ * phone — the JWT carries the role, so an old token won't reflect the
+ * change until a fresh login mints a new one.
+ * Visit: https://<your-app>.onrender.com/admin/promote?token=<SEED_TOKEN>&email=<the account's email>
+ */
+app.get("/admin/promote", async (req, res) => {
+  try {
+    if (!process.env.SEED_TOKEN || req.query.token !== process.env.SEED_TOKEN) {
+      return res.status(403).json({ error: "Invalid or missing token" });
+    }
+    const { email, firstName, lastName } = req.query;
+    if (!email) {
+      return res.status(400).json({ error: "Provide ?email=the-account-email" });
+    }
+
+    const prisma = require("./config/db");
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ error: `No user found with email ${email}` });
+    }
+
+    await prisma.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
+
+    const existingAdminProfile = await prisma.adminProfile.findUnique({ where: { userId: user.id } });
+    if (!existingAdminProfile) {
+      await prisma.adminProfile.create({
+        data: {
+          userId: user.id,
+          firstName: firstName || "Admin",
+          lastName: lastName || "User",
+        },
+      });
+    }
+
+    return res.json({ message: `${email} is now an ADMIN. Log out and back in on the phone to see it take effect.` });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/admin/seed", async (req, res) => {
   try {
     if (!process.env.SEED_TOKEN || req.query.token !== process.env.SEED_TOKEN) {
