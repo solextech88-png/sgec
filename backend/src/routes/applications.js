@@ -5,6 +5,7 @@ const { requireAuth, requireRole } = require("../middleware/auth");
 
 router.post("/", requireAuth, requireRole("STUDENT"), controller.createDraft);
 router.get("/mine", requireAuth, requireRole("STUDENT"), controller.listMine);
+router.put("/:id/withdraw", requireAuth, requireRole("STUDENT"), controller.withdraw);
 
 router.get("/", requireAuth, requireRole("CONSULTANT", "ADMIN"), controller.listAll);
 router.put("/:id/status", requireAuth, requireRole("CONSULTANT", "ADMIN"), controller.updateStatus);

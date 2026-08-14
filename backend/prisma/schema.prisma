@@ -237,6 +237,7 @@ model Programme {
   university        University @relation(fields: [universityId], references: [id])
   universityId      String
   name              String
+  faculty           String?    // e.g. "School of Informatics", "Business School" — used to group programmes in the UI
   level             StudyLevel
   fieldOfStudy      String?
   durationMonths    Int?

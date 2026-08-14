@@ -106,4 +106,40 @@ async function submitToUniversity(req, res, next) {
   });
 }
 
-module.exports = { createDraft, listMine, listAll, updateStatus, submitToUniversity };
+/**
+ * Lets a student withdraw their own application at any point before it
+ * reaches a terminal state. Ownership is enforced by matching studentId
+ * against the caller's own student profile, not just the application id —
+ * without that check any student could withdraw any application by guessing
+ * an id. Already-terminal applications (withdrawn, rejected, enrolled) can't
+ * be withdrawn again; that's not a real action, just noise in the history.
+ */
+const TERMINAL_STATUSES = ["WITHDRAWN", "REJECTED", "ENROLLED"];
+
+async function withdraw(req, res, next) {
+  try {
+    const student = await prisma.studentProfile.findUnique({ where: { userId: req.user.id } });
+    if (!student) return res.status(404).json({ error: "Student profile not found" });
+
+    const application = await prisma.application.findUnique({ where: { id: req.params.id } });
+    if (!application || application.studentId !== student.id) {
+      return res.status(404).json({ error: "Application not found" });
+    }
+    if (TERMINAL_STATUSES.includes(application.status)) {
+      return res.status(400).json({ error: `Cannot withdraw an application that is already ${application.status}` });
+    }
+
+    const updated = await prisma.application.update({
+      where: { id: application.id },
+      data: {
+        status: "WITHDRAWN",
+        statusHistory: { create: { status: "WITHDRAWN", note: "Withdrawn by student" } },
+      },
+    });
+    return res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createDraft, listMine, listAll, updateStatus, submitToUniversity, withdraw };

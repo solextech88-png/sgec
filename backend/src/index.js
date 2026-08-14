@@ -203,6 +203,164 @@ app.get("/admin/seed-more", async (req, res) => {
   }
 });
 
+app.get("/admin/backfill-faculty", async (req, res) => {
+  try {
+    if (!process.env.SEED_TOKEN || req.query.token !== process.env.SEED_TOKEN) {
+      return res.status(403).json({ error: "Invalid or missing token" });
+    }
+
+    const prisma = require("./config/db");
+    // Real school/faculty names for the 10 existing programmes (all
+    // Computer Science/Data Science ones seeded so far). Safe to re-run —
+    // just overwrites with the same values each time.
+    const facultyByUniversity = {
+      "University of Manchester": "Department of Computer Science",
+      "Dublin City University": "School of Computing",
+      "Technical University of Munich": "School of Computation, Information and Technology",
+      "University of Edinburgh": "School of Informatics",
+      "University College Dublin": "School of Computer Science",
+      "Delft University of Technology": "Faculty of Electrical Engineering, Mathematics and Computer Science",
+      "KTH Royal Institute of Technology": "School of Electrical Engineering and Computer Science",
+      "University of Amsterdam": "Faculty of Science",
+      "RWTH Aachen University": "Faculty of Mathematics, Computer Science and Natural Sciences",
+      "Coventry University": "School of Computing, Electronics and Mathematics",
+    };
+
+    const universities = await prisma.university.findMany({ include: { programmes: true } });
+    let updated = 0;
+    for (const uni of universities) {
+      const faculty = facultyByUniversity[uni.name];
+      if (!faculty) continue;
+      for (const p of uni.programmes) {
+        if (!p.faculty) {
+          await prisma.programme.update({ where: { id: p.id }, data: { faculty } });
+          updated++;
+        }
+      }
+    }
+
+    return res.json({ message: "Done.", updated });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/admin/seed-more2", async (req, res) => {
+  try {
+    if (!process.env.SEED_TOKEN || req.query.token !== process.env.SEED_TOKEN) {
+      return res.status(403).json({ error: "Invalid or missing token" });
+    }
+
+    const prisma = require("./config/db");
+
+    // 5 more real programmes from different faculties at universities we
+    // already have, so the "group by faculty" UI has something to show.
+    // Researched from official/aggregator sources mid-2026 — verify
+    // against official pages before treating as final for real applicants.
+    const additions = [
+      {
+        universityName: "University of Manchester",
+        programme: {
+          name: "MSc Business Analytics and Artificial Intelligence", faculty: "Alliance Manchester Business School",
+          level: "MSC", fieldOfStudy: "Business Analytics", durationMonths: 12,
+          tuitionFeeAmount: 35700, tuitionFeeCurrency: "GBP",
+          entryRequirements: "First or upper second-class honours degree (2:1) from a UK university or overseas equivalent in a quantitative subject such as mathematics, statistics, physics, engineering, computing, or economics",
+          englishRequirement: "IELTS 6.5 overall, minimum 6.0 in each component",
+          applicationDeadline: new Date("2027-07-05"), scholarshipsAvailable: "Alliance MBS Master's scholarships (announced per cycle)",
+          campus: "Alliance Manchester Business School", startDates: ["September 2026"], casAvailable: true,
+          dependantsPolicy: "Postgraduate taught students generally cannot bring dependants under current UK visa rules",
+          visaInfo: "Student Route visa required", postGradWorkRights: "Graduate Route — 2 years post-study work visa",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        universityName: "University College Dublin",
+        programme: {
+          name: "MSc in Management", faculty: "UCD Michael Smurfit Graduate Business School",
+          level: "MSC", fieldOfStudy: "Management", durationMonths: 12,
+          tuitionFeeAmount: 22600, tuitionFeeCurrency: "EUR",
+          entryRequirements: "Bachelor's degree (2:1 or equivalent) in any non-business discipline — designed for graduates without a business background",
+          englishRequirement: "IELTS 6.5 overall, no component below 6.0",
+          applicationDeadline: new Date("2027-05-01"), scholarshipsAvailable: "UCD Smurfit alumni discount (5%) where applicable",
+          campus: "UCD Michael Smurfit Graduate Business School, Blackrock", startDates: ["September 2026"], casAvailable: false,
+          dependantsPolicy: "Not generally applicable for non-EEA postgraduate students on a Stamp 2 permission",
+          visaInfo: "Irish study visa/preclearance required for many nationalities", postGradWorkRights: "Third Level Graduate Scheme — up to 24 months stay-back",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        universityName: "Delft University of Technology",
+        programme: {
+          name: "MSc Industrial Design Engineering", faculty: "Faculty of Industrial Design Engineering",
+          level: "MSC", fieldOfStudy: "Design Engineering", durationMonths: 24,
+          tuitionFeeAmount: 25633, tuitionFeeCurrency: "EUR",
+          entryRequirements: "Bachelor's degree in industrial design, engineering, or a related field; portfolio demonstrating design/prototyping ability required",
+          englishRequirement: "IELTS 7.0 or TOEFL iBT 100",
+          applicationDeadline: new Date("2027-04-01"), scholarshipsAvailable: "Justus & Louise van Effen Excellence Scholarship; Holland Scholarship (€5,000)",
+          campus: "TU Delft Campus", startDates: ["September 2026"], casAvailable: false,
+          dependantsPolicy: "Family reunification possible under Dutch residence permit rules",
+          visaInfo: "Dutch entry visa/residence permit (MVV) required for most non-EU/EEA students", postGradWorkRights: "Orientation Year residence permit — up to 12 months to find work",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        universityName: "KTH Royal Institute of Technology",
+        programme: {
+          name: "MSc Industrial Management", faculty: "School of Industrial Engineering and Management",
+          level: "MSC", fieldOfStudy: "Industrial Management", durationMonths: 24,
+          tuitionFeeAmount: 180000, tuitionFeeCurrency: "SEK",
+          entryRequirements: "Bachelor's degree with an engineering background from an internationally recognised university",
+          englishRequirement: "IELTS 6.5 overall or TOEFL 90 (Swedish upper-secondary English 6 equivalent)",
+          applicationDeadline: new Date("2027-01-15"), scholarshipsAvailable: "KTH Scholarship; Swedish Institute Scholarships (select countries)",
+          campus: "KTH Campus, Stockholm", startDates: ["August 2026"], casAvailable: false,
+          dependantsPolicy: "Family reunification permit available for spouse/children",
+          visaInfo: "Swedish residence permit for studies required for non-EU/EEA students", postGradWorkRights: "12-month post-study residence permit to seek work",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        universityName: "Technical University of Munich",
+        programme: {
+          name: "MSc Management", faculty: "TUM School of Management",
+          level: "MSC", fieldOfStudy: "Management", durationMonths: 24,
+          tuitionFeeAmount: 8000, tuitionFeeCurrency: "EUR",
+          entryRequirements: "Bachelor's degree in natural sciences, engineering, or life sciences; admission-restricted with a required aptitude assessment",
+          englishRequirement: "IELTS 6.5 or TOEFL iBT 88 (programme partly taught in English)",
+          applicationDeadline: new Date("2027-05-31"), scholarshipsAvailable: "TUM Master's scholarships (merit-based, limited availability)",
+          campus: "TUM Campus, Munich", startDates: ["October 2026"], casAvailable: false,
+          dependantsPolicy: "Family reunification possible under German residence permit rules",
+          visaInfo: "German national (D) visa for study purposes required for most non-EU nationals", postGradWorkRights: "18-month job-seeker residence permit after graduation",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+    ];
+
+    const created = [];
+    const skipped = [];
+
+    for (const item of additions) {
+      const uni = await prisma.university.findFirst({ where: { name: item.universityName } });
+      if (!uni) {
+        skipped.push(`${item.universityName} (university not found)`);
+        continue;
+      }
+      const existing = await prisma.programme.findFirst({
+        where: { universityId: uni.id, name: item.programme.name },
+      });
+      if (existing) {
+        skipped.push(`${item.universityName} — ${item.programme.name} (already exists)`);
+        continue;
+      }
+      await prisma.programme.create({ data: { ...item.programme, universityId: uni.id } });
+      created.push(`${item.universityName} — ${item.programme.name}`);
+    }
+
+    return res.json({ message: "Done.", created, skipped });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/admin/promote", async (req, res) => {
   try {
     if (!process.env.SEED_TOKEN || req.query.token !== process.env.SEED_TOKEN) {
