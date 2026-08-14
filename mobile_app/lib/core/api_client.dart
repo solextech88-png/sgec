@@ -40,13 +40,17 @@ class ApiClient {
 
   Future<dynamic> post(String path, {Object? body}) async {
     final uri = Uri.parse('$baseUrl$path');
-    final res = await http.post(uri, headers: await _headers(), body: jsonEncode(body));
+    final res = body == null
+        ? await http.post(uri, headers: await _headers(json: false))
+        : await http.post(uri, headers: await _headers(), body: jsonEncode(body));
     return _handle(res);
   }
 
   Future<dynamic> put(String path, {Object? body}) async {
     final uri = Uri.parse('$baseUrl$path');
-    final res = await http.put(uri, headers: await _headers(), body: jsonEncode(body));
+    final res = body == null
+        ? await http.put(uri, headers: await _headers(json: false))
+        : await http.put(uri, headers: await _headers(), body: jsonEncode(body));
     return _handle(res);
   }
 

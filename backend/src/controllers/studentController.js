@@ -22,7 +22,7 @@ async function updateMyProfile(req, res, next) {
     const allowedFields = [
       "firstName", "lastName", "dateOfBirth", "nationality",
       "countryOfResidence", "gender", "passportNumber",
-      "highestQualification", "gpaOrGrade",
+      "highestQualification", "gpaOrGrade", "englishTestType", "englishTestScore",
     ];
     const data = {};
     for (const field of allowedFields) {

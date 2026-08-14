@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/session_provider.dart';
+import 'edit_profile_screen.dart';
 
 final myProfileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final api = ref.read(apiClientProvider);
@@ -37,13 +38,27 @@ class ProfileScreen extends ConsumerWidget {
             Text('${p['firstName']} ${p['lastName']}',
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
-            ListTile(title: const Text('Nationality'), subtitle: Text(p['nationality'] ?? '—')),
+            ListTile(
+                title: const Text('Nationality'), subtitle: Text(p['nationality'] ?? '—')),
             ListTile(
                 title: const Text('Country of residence'),
                 subtitle: Text(p['countryOfResidence'] ?? '—')),
             ListTile(
+                title: const Text('Passport number'),
+                subtitle: Text(p['passportNumber'] ?? '—')),
+            ListTile(
                 title: const Text('Highest qualification'),
                 subtitle: Text(p['highestQualification'] ?? '—')),
+            ListTile(
+                title: const Text('Grade / GPA'),
+                subtitle: Text(p['gpaOrGrade'] ?? '—')),
+            ListTile(
+                title: const Text('English proficiency'),
+                subtitle: Text(
+                  (p['englishTestType'] != null && p['englishTestScore'] != null)
+                      ? '${p['englishTestType']}: ${p['englishTestScore']}'
+                      : '—',
+                )),
             ListTile(
               title: const Text('Assigned consultant'),
               subtitle: Text(p['assignedConsultant'] != null
@@ -52,8 +67,10 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             FilledButton.tonal(
-              onPressed: () {
-                // TODO: push an edit-profile form that PUTs to /students/me
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => EditProfileScreen(initialProfile: p)),
+                );
               },
               child: const Text('Edit profile'),
             ),

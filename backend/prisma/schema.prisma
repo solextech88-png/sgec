@@ -128,6 +128,8 @@ model StudentProfile {
 
   highestQualification String?
   gpaOrGrade      String?
+  englishTestType  String?  // e.g. "IELTS", "TOEFL", "PTE", "Duolingo"
+  englishTestScore String?  // e.g. "7.0 overall" — kept as free text since formats differ by test
 
   assignedConsultant   ConsultantProfile? @relation(fields: [assignedConsultantId], references: [id])
   assignedConsultantId String?
