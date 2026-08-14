@@ -10,7 +10,7 @@ class AppConstants {
   // (ideally injected via --dart-define at build time, not hardcoded).
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:4000/api',
+    defaultValue: 'https://sgec.onrender.com/api',
   );
 
   static const String secureStorageTokenKey = 'sgec_auth_token';
