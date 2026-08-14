@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/session_provider.dart';
+import '../students/student_detail_screen.dart';
 
 final consultantStudentsProvider = FutureProvider<List<dynamic>>((ref) async {
   final api = ref.read(apiClientProvider);
@@ -90,7 +91,9 @@ class _StudentsTab extends ConsumerWidget {
             title: Text('${s['firstName']} ${s['lastName']}'),
             subtitle: Text(s['user']?['email'] ?? s['user']?['phone'] ?? ''),
             onTap: () {
-              // TODO: push StudentDetailScreen(studentId: s['id'])
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => StudentDetailScreen(studentId: s['id'])),
+              );
             },
           );
         },

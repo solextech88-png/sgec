@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/session_provider.dart';
 import '../universities/university_list_screen.dart';
+import '../students/student_list_screen.dart';
 
 /// Admin landing screen. University/programme CRUD reuses
 /// UniversityListScreen for browsing; full add/edit forms and the
@@ -19,6 +20,11 @@ class AdminDashboardScreen extends ConsumerWidget {
       _AdminTile('Universities & programmes', Icons.school, () {
         Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => const UniversityListScreen(),
+        ));
+      }),
+      _AdminTile('Students', Icons.people, () {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const StudentListScreen(),
         ));
       }),
       _AdminTile('Consultants', Icons.support_agent, () {

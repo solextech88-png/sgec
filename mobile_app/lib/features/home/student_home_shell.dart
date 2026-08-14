@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../universities/university_list_screen.dart';
 import '../applications/application_tracker_screen.dart';
+import '../documents/document_upload_screen.dart';
 import '../ai_assistant/ai_assistant_screen.dart';
 import '../chat/chat_screen.dart';
 import '../profile/profile_screen.dart';
@@ -21,6 +22,7 @@ class _StudentHomeShellState extends State<StudentHomeShell> {
   static const _screens = [
     UniversityListScreen(),
     ApplicationTrackerScreen(),
+    DocumentUploadScreen(),
     AiAssistantScreen(),
     ChatScreen(),
     ProfileScreen(),
@@ -36,6 +38,7 @@ class _StudentHomeShellState extends State<StudentHomeShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.school_outlined), label: 'Universities'),
           NavigationDestination(icon: Icon(Icons.assignment_outlined), label: 'Applications'),
+          NavigationDestination(icon: Icon(Icons.upload_file_outlined), label: 'Documents'),
           NavigationDestination(icon: Icon(Icons.smart_toy_outlined), label: 'AI Assistant'),
           NavigationDestination(icon: Icon(Icons.chat_outlined), label: 'Chat'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),

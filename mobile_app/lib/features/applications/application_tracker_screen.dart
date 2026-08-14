@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/session_provider.dart';
+import 'application_detail_screen.dart';
 
 final myApplicationsProvider = FutureProvider<List<dynamic>>((ref) async {
   final api = ref.read(apiClientProvider);
@@ -40,18 +41,27 @@ class ApplicationTrackerScreen extends ConsumerWidget {
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(programme?['name'] ?? '', style: Theme.of(context).textTheme.titleMedium),
-                      Text(university?['name'] ?? ''),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(value: progress.clamp(0, 1)),
-                      const SizedBox(height: 4),
-                      Text(status.toString().replaceAll('_', ' ')),
-                    ],
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ApplicationDetailScreen(application: a as Map<String, dynamic>),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(programme?['name'] ?? '', style: Theme.of(context).textTheme.titleMedium),
+                        Text(university?['name'] ?? ''),
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(value: progress.clamp(0, 1)),
+                        const SizedBox(height: 4),
+                        Text(status.toString().replaceAll('_', ' ')),
+                      ],
+                    ),
                   ),
                 ),
               );
