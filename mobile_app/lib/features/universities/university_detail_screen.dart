@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/session_provider.dart';
+import 'programme_detail_screen.dart';
 
 final universityDetailProvider =
     FutureProvider.family<Map<String, dynamic>, String>((ref, id) async {
@@ -43,9 +44,14 @@ class UniversityDetailScreen extends ConsumerWidget {
                           ? const Chip(label: Text('Next intake'))
                           : null,
                       onTap: () {
-                        // TODO: push to a ProgrammeDetailScreen with full
-                        // entry requirements, deadlines, visa info, and an
-                        // "Apply" button that calls POST /applications.
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ProgrammeDetailScreen(
+                              programme: p as Map<String, dynamic>,
+                              universityName: u['name'] ?? '',
+                            ),
+                          ),
+                        );
                       },
                     ),
                   )),
