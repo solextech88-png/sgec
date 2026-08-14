@@ -52,6 +52,157 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
  * change until a fresh login mints a new one.
  * Visit: https://<your-app>.onrender.com/admin/promote?token=<SEED_TOKEN>&email=<the account's email>
  */
+app.get("/admin/seed-more", async (req, res) => {
+  try {
+    if (!process.env.SEED_TOKEN || req.query.token !== process.env.SEED_TOKEN) {
+      return res.status(403).json({ error: "Invalid or missing token" });
+    }
+
+    const prisma = require("./config/db");
+    const countries = await prisma.country.findMany();
+    const byIso = Object.fromEntries(countries.map((c) => [c.isoCode, c]));
+
+    // Real universities/programmes with researched (approximate, subject to
+    // change — verify against official pages before relying on these)
+    // fees and requirements as of mid-2026. Safe to call more than once:
+    // each university is only created if one with the same name doesn't
+    // already exist.
+    const additions = [
+      {
+        university: { name: "University of Edinburgh", countryIso: "GB", city: "Edinburgh", type: "Public", websiteUrl: "https://www.ed.ac.uk" },
+        programme: {
+          name: "MSc Artificial Intelligence", level: "MSC", fieldOfStudy: "Computer Science",
+          durationMonths: 12, tuitionFeeAmount: 45410, tuitionFeeCurrency: "GBP",
+          entryRequirements: "UK 2:1 honours degree or international equivalent in informatics, computer science, cognitive science, mathematics, or a related quantitative subject",
+          englishRequirement: "IELTS 6.5 overall, minimum 6.0 in each component (standard requirement)",
+          applicationDeadline: new Date("2027-03-31"), scholarshipsAvailable: "School of Informatics scholarships; 10% discount for Edinburgh alumni",
+          campus: "Main Campus, Edinburgh", startDates: ["September 2026"], casAvailable: true,
+          dependantsPolicy: "Postgraduate taught students generally cannot bring dependants under current UK visa rules",
+          visaInfo: "Student Route visa required", postGradWorkRights: "Graduate Route — 2 years post-study work visa",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        university: { name: "University College Dublin", countryIso: "IE", city: "Dublin", type: "Public", websiteUrl: "https://www.ucd.ie" },
+        programme: {
+          name: "MSc Data and Computational Science", level: "MSC", fieldOfStudy: "Data Science",
+          durationMonths: 12, tuitionFeeAmount: 22530, tuitionFeeCurrency: "EUR",
+          entryRequirements: "Upper second-class honours degree (2:1) or higher in a highly quantitative subject such as Mathematics, Physics, Statistics, or Engineering",
+          englishRequirement: "IELTS 6.5 overall, no component below 6.0",
+          applicationDeadline: new Date("2027-04-30"), scholarshipsAvailable: "UCD Global Excellence Scholarship",
+          campus: "Belfield Campus, Dublin", startDates: ["September 2026"], casAvailable: false,
+          dependantsPolicy: "Not generally applicable for non-EEA postgraduate students on a Stamp 2 permission",
+          visaInfo: "Irish study visa/preclearance required for many nationalities", postGradWorkRights: "Third Level Graduate Scheme — up to 24 months stay-back",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        university: { name: "Delft University of Technology", countryIso: "NL", city: "Delft", type: "Technological University", websiteUrl: "https://www.tudelft.nl" },
+        programme: {
+          name: "MSc Computer Science", level: "MSC", fieldOfStudy: "Computer Science",
+          durationMonths: 24, tuitionFeeAmount: 25633, tuitionFeeCurrency: "EUR",
+          entryRequirements: "Bachelor's degree in Computer Science or a closely related field with a strong quantitative background",
+          englishRequirement: "IELTS 7.0 or TOEFL iBT 100",
+          applicationDeadline: new Date("2027-01-15"), scholarshipsAvailable: "Justus & Louise van Effen Scholarship; Holland Scholarship (€5,000, non-EEA)",
+          campus: "TU Delft Campus", startDates: ["September 2026"], casAvailable: false,
+          dependantsPolicy: "Family reunification possible under Dutch residence permit rules",
+          visaInfo: "Dutch entry visa/residence permit (MVV) required for most non-EU/EEA students", postGradWorkRights: "Orientation Year residence permit — up to 12 months to find work",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        university: { name: "KTH Royal Institute of Technology", countryIso: "SE", city: "Stockholm", type: "Public", websiteUrl: "https://www.kth.se" },
+        programme: {
+          name: "MSc Machine Learning", level: "MSC", fieldOfStudy: "Computer Science",
+          durationMonths: 24, tuitionFeeAmount: 180000, tuitionFeeCurrency: "SEK",
+          entryRequirements: "Bachelor's degree with a strong foundation in mathematics and computer science (algorithms, data structures, linear algebra)",
+          englishRequirement: "IELTS 6.5 overall or TOEFL 90 (Swedish upper-secondary English 6 equivalent)",
+          applicationDeadline: new Date("2027-01-15"), scholarshipsAvailable: "KTH Global Scholarship; Swedish Institute Scholarships (select countries)",
+          campus: "KTH Campus, Stockholm", startDates: ["August 2026"], casAvailable: false,
+          dependantsPolicy: "Family reunification permit available for spouse/children",
+          visaInfo: "Swedish residence permit for studies required for non-EU/EEA students", postGradWorkRights: "12-month post-study residence permit to seek work",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        university: { name: "University of Amsterdam", countryIso: "NL", city: "Amsterdam", type: "Public", websiteUrl: "https://www.uva.nl" },
+        programme: {
+          name: "MSc Artificial Intelligence", level: "MSC", fieldOfStudy: "Computer Science",
+          durationMonths: 24, tuitionFeeAmount: 19910, tuitionFeeCurrency: "EUR",
+          entryRequirements: "Bachelor's degree in Artificial Intelligence, Computer Science, or a comparable quantitative field with basic computer science coursework",
+          englishRequirement: "IELTS 7.0 or equivalent",
+          applicationDeadline: new Date("2027-04-01"), scholarshipsAvailable: "Amsterdam Merit Scholarship",
+          campus: "Science Park Campus, Amsterdam", startDates: ["September 2026"], casAvailable: false,
+          dependantsPolicy: "Family reunification possible under Dutch residence permit rules",
+          visaInfo: "Dutch entry visa/residence permit required for most non-EU/EEA students", postGradWorkRights: "Orientation Year residence permit — up to 12 months",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        university: { name: "RWTH Aachen University", countryIso: "DE", city: "Aachen", type: "Public", websiteUrl: "https://www.rwth-aachen.de" },
+        programme: {
+          name: "MSc Data Science", level: "MSC", fieldOfStudy: "Data Science",
+          durationMonths: 24, tuitionFeeAmount: 0, tuitionFeeCurrency: "EUR",
+          entryRequirements: "Bachelor's degree in Computer Science, Mathematics, Physics, or a related field; GRE General Test required",
+          englishRequirement: "IELTS 6.5 or TOEFL iBT 95",
+          applicationDeadline: new Date("2027-03-01"), scholarshipsAvailable: "DAAD scholarships for select nationalities",
+          campus: "RWTH Aachen Campus", startDates: ["October 2026"], casAvailable: false,
+          dependantsPolicy: "Family reunification possible under German residence permit rules",
+          visaInfo: "German national (D) visa for study purposes required for most non-EU nationals; tuition-free (semester contribution ~€298 applies)",
+          postGradWorkRights: "18-month job-seeker residence permit after graduation",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+      {
+        university: { name: "Coventry University", countryIso: "GB", city: "Coventry", type: "Technological University", websiteUrl: "https://www.coventry.ac.uk" },
+        programme: {
+          name: "MSc Data Science", level: "MSC", fieldOfStudy: "Data Science",
+          durationMonths: 12, tuitionFeeAmount: 18600, tuitionFeeCurrency: "GBP",
+          entryRequirements: "2:2 honours degree or above (any discipline) or equivalent; relevant professional experience also considered",
+          englishRequirement: "IELTS 6.5 overall, no component below 5.5",
+          applicationDeadline: new Date("2027-06-30"), scholarshipsAvailable: "Vice-Chancellor Postgraduate Scholarship (£2,000–£3,000); 25% alumni discount",
+          campus: "Coventry University Campus", startDates: ["September 2026", "January 2027"], casAvailable: true,
+          dependantsPolicy: "Postgraduate taught students generally cannot bring dependants under current UK visa rules",
+          visaInfo: "Student Route visa required", postGradWorkRights: "Graduate Route — 2 years post-study work visa",
+          intakeCycle: "2026/27", isNextIntake: true,
+        },
+      },
+    ];
+
+    const created = [];
+    const skipped = [];
+
+    for (const item of additions) {
+      const country = byIso[item.university.countryIso];
+      if (!country) {
+        skipped.push(`${item.university.name} (country ${item.university.countryIso} not found)`);
+        continue;
+      }
+
+      let uni = await prisma.university.findFirst({ where: { name: item.university.name } });
+      if (!uni) {
+        uni = await prisma.university.create({
+          data: { ...item.university, countryId: country.id, countryIso: undefined },
+        });
+      }
+
+      const existingProgramme = await prisma.programme.findFirst({
+        where: { universityId: uni.id, name: item.programme.name },
+      });
+      if (!existingProgramme) {
+        await prisma.programme.create({ data: { ...item.programme, universityId: uni.id } });
+        created.push(item.university.name);
+      } else {
+        skipped.push(`${item.university.name} (already exists)`);
+      }
+    }
+
+    return res.json({ message: "Done.", created, skipped });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/admin/promote", async (req, res) => {
   try {
     if (!process.env.SEED_TOKEN || req.query.token !== process.env.SEED_TOKEN) {
