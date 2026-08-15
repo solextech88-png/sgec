@@ -17,6 +17,7 @@ const applicationRoutes = require("./routes/applications");
 const chatRoutes = require("./routes/chat");
 const notificationRoutes = require("./routes/notifications");
 const aiRoutes = require("./routes/ai");
+const consultantRoutes = require("./routes/consultants");
 
 const app = express();
 
@@ -506,6 +507,7 @@ app.use("/api/applications", applicationRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/consultants", consultantRoutes);
 
 app.use(errorHandler);
 
